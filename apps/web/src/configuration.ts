@@ -20,13 +20,10 @@ export type Configuration = {
   };
 };
 
-export const configure = (
+export const configureSymbols = (
   layer: FeatureLayer,
-  table: HTMLArcgisFeatureTableElement,
-  config: Configuration,
+  symbolConfig: Configuration["symbolConfig"],
 ) => {
-  const { symbolConfig, tableConfig } = config;
-
   const visualVariables: Array<
     (SizeVariableProperties & { type: "size" }) | (ColorVariableProperties & { type: "color" })
   > = [];
@@ -59,11 +56,28 @@ export const configure = (
     visualVariables
   });
   layer.renderer = renderer;
+};
 
+export const configureTable = (
+  layer: FeatureLayer,
+  table: HTMLArcgisFeatureTableElement,
+  tableConfig: Configuration["tableConfig"],
+) => {
   table.tableTemplate = new TableTemplate({
     columnTemplates: tableConfig.columns.map(
       (fieldName) => new FieldColumnTemplate({ fieldName, visible: true }),
     ),
   });
-  table.hiddenFields = new Collection<string>();
+  table.hiddenFields = new Collection<string>(
+    layer.fields.filter(field => !tableConfig.columns.includes(field.name)).map(field => field.name),
+  );
+};
+
+export const configure = (
+  layer: FeatureLayer,
+  table: HTMLArcgisFeatureTableElement,
+  config: Configuration,
+) => {
+  configureSymbols(layer, config.symbolConfig);
+  configureTable(layer, table, config.tableConfig);
 };
